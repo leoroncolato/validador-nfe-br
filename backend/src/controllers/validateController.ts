@@ -1,4 +1,5 @@
 import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
+import { XMLParser, XMLValidator } from 'fast-xml-parser';
 
 export const validarRequest = async (request: FastifyRequest, reply: FastifyReply) => { 
     const contentType = request.headers['content-type'] || '';
