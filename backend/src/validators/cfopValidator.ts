@@ -1,6 +1,6 @@
 import { type NFe } from '../models/nf-e.js';
 import { type ValidationResult } from '../types/validation.js';
-import cfopConfig from '../config/cfop-config.json';
+import cfopConfig  from '../config/cfop-config.json' with { type: "json" };
 
 export const validateCFOP = (nfe: NFe): ValidationResult[] | ValidationResult => {
   if (!nfe.ide || !Array.isArray(nfe.ide)) return null;
