@@ -4,19 +4,23 @@ export interface Emitente {
   }
   
   export interface ItemNFe {
-    nItem: string; // Número do item na nota tipo "1", "2"
     cProd: string;
-    vProd: number; // Em centavos
-    CFOP: string;
+    vProd: string | number;
+    qCom?: string | number;
   }
   
   export interface Totais {
-    vProd: number; // Em centavos
-    vNF: number;   // Em centavos
+    vProd: string | number;
+    vNF: string | number;
   }
   
-  export interface NFeContext {
+  export interface Ide {
+    CFOP: string | number;
+  }
+  
+  export interface NFe {
     emit: Emitente;
     det: ItemNFe[];
     total: Totais;
+    ide: Ide[]; 
   }
