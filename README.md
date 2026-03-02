@@ -1,0 +1,1 @@
+https://saladenegocios-br.forvismazars.com/2025/07/18/bpo-fiscal-e-tecnologia/

@@ -5,37 +5,49 @@ export const validarRequest = async (request: FastifyRequest, reply: FastifyRepl
     const contentType = request.headers['content-type'] || '';
     let xmlString: string | undefined;
     
-    //extrai o XML do corpo da requisição se for multipart
-    if (contentType.includes('multipart/form-data')) {
+    try {
         const data = await request.file();
-        if (!data) return reply.status(400).send({ error: 'Nenhum arquivo enviado' });
-        const buffer = await data.toBuffer();
-        xmlString = buffer.toString('utf-8'); //padrão trabalhado em arquivos de texto 
-    }
 
-    //extrai o XML do corpo da requisição se for XML puro
-    else if (contentType.includes('application/xml') || contentType.includes('text/xml')) {
-        xmlString = request.body as string;
-    }
+        if(!data){
+            return reply.status(400).send({ error: 'Nenhum arquivo enviado' });
+        }
 
-    //extrai o XML do corpo se for JSON
-    else if (contentType.includes('application/json')) {
-        const data = request.body as { xml: string };
-        xmlString = data.xml;
-    }
+        // Usando .toBuffer() para leitura, que é seguro com nosso limite estrito de 10MB
+        const fileBuffer = await data.toBuffer();
+        const xmlContent = fileBuffer.toString('utf-8');
 
-    //se nao receber nada retorna erro
-    else if (!xmlString) {
-        return reply.status(415).send({ error: 'Nenhum arquivo com formato correto recebido' });
-    }
+        // Validação do XML usando fast-xml-parser
+        const validacaoResultado = XMLValidator.validate(xmlContent);
+        if (validacaoResultado !== true) {
+            return reply.status(400).send({ error: 'XML inválido', details: validacaoResultado });
+        }
 
-    //Validação do XML
-    if (xmlString || xmlString.trim() !== '') {
-        return reply.status(400).send({ message: 'XML vazio ou ausente de tags e conteudo' });
+        //configurando XML-Parser
+        const parser = new XMLParser({
+            ignoreAttributes: false,
+            attributeNamePrefix: '@_',
+            parseTagValue: true,
+            parseAttributeValue: true,
+            trimValues: true
+        });
+
+        //cCaso o Xml seja JSOn
+        const parsedJson = parser.parse(xmlContent);
+        //verificação do cabeçalho do XML para garantir que seja um arquivo de NFe válido, verificando as tags principais
+        if (!parsedJson.nfeProc && !parsedJson.NFe) {
+            return reply.status(400).send({ error: 'XML vazio ou sem conteúdo válido' });
+        }
+
+        return reply.status(200).send({ message: 'XML recebido e validado com sucesso', size: xmlContent.length });
+    } catch (error: any) {
+        request.log.error('Erro ao processar o arquivo XML:', error);
+
+        // Captura explícita do erro lançado se o arquivo exceder os 10MB (limite do multipart)
+    if (error.code === 'FST_REQ_FILE_TOO_LARGE') {
+        return reply.status(413).send({ error: 'O arquivo excede o tamanho máximo configurado de 10MB.' });
+      }
+  
+      return reply.status(500).send({ error: 'Erro interno ao processar o arquivo XML.' });
     }
     
-
-    //se tudo der certo vem para essa linha kkkkkkkkkkk
-    return reply.status(200).send({ message: 'XML recebido e validado com sucesso', size: xmlString.length });
-
  }
