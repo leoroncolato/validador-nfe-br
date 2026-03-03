@@ -16,7 +16,7 @@ export const validarNFe = async (request: FastifyRequest, reply: FastifyReply) =
     
             // Usando .toBuffer() para leitura, que é seguro com nosso limite estrito de 10MB
             const buffer = await data.toBuffer();
-            const xmlContent = buffer.toString('utf-8'); //formatação padrão de caracteres
+            xmlContent = buffer.toString('utf-8'); //formatação padrão de caracteres
         } else {
             //caso enviem o XML como raw text no <body> da requisição
             xmlContent = typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
