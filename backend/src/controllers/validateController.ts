@@ -1,53 +1,59 @@
-import Fastify, { type FastifyRequest, type FastifyReply } from 'fastify';
-import { XMLParser, XMLValidator } from 'fast-xml-parser';
+import { type FastifyRequest, type FastifyReply } from 'fastify';
+import { XmlParsingError, parseNFeXML } from '../services/conversorXml.js';
+import { runValidations } from '../services/validadorNFe.js';
+import { formatValidationResponse, formatParsingError } from '../utils/errorFormatter.js'
 
-export const validarRequest = async (request: FastifyRequest, reply: FastifyReply) => { 
-    const contentType = request.headers['content-type'] || '';
-    let xmlString: string | undefined;
-    
+export const validarNFe = async (request: FastifyRequest, reply: FastifyReply) => {
     try {
-        const data = await request.file();
+        let xmlContent = '';
 
-        if(!data){
-            return reply.status(400).send({ error: 'Nenhum arquivo enviado' });
+        //Verificação para saber se a request é do tipo multipart/form-data (upload de arquivo) ou application/json (XML em string)
+        if (request.isMultipart()) {
+            const data = await request.file();
+            if(!data){
+                return reply.status(400).send({ error: 'Nenhum arquivo enviado' });
+            }
+    
+            // Usando .toBuffer() para leitura, que é seguro com nosso limite estrito de 10MB
+            const buffer = await data.toBuffer();
+            const xmlContent = buffer.toString('utf-8'); //formatação padrão de caracteres
+        } else {
+            //caso enviem o XML como raw text no <body> da requisição
+            xmlContent = typeof request.body === 'string' ? request.body : JSON.stringify(request.body);
         }
 
-        // Usando .toBuffer() para leitura, que é seguro com nosso limite estrito de 10MB
-        const fileBuffer = await data.toBuffer();
-        const xmlContent = fileBuffer.toString('utf-8');
 
-        // Validação do XML usando fast-xml-parser
-        const validacaoResultado = XMLValidator.validate(xmlContent);
-        if (validacaoResultado !== true) {
-            return reply.status(400).send({ error: 'XML inválido', details: validacaoResultado });
+
+        if (!xmlContent || xmlContent.trim() === '') {
+            return reply.status(400).send({ formatParsingError: 'XML vazio ou sem conteúdo válido' });
         }
 
-        //configurando XML-Parser
-        const parser = new XMLParser({
-            ignoreAttributes: false,
-            attributeNamePrefix: '@_',
-            parseTagValue: true,
-            parseAttributeValue: true,
-            trimValues: true
-        });
+        //1º XML -> Objeto TypeScript
+        const nfeParsed = parseNFeXML(xmlContent);
 
-        //cCaso o Xml seja JSOn
-        const parsedJson = parser.parse(xmlContent);
-        //verificação do cabeçalho do XML para garantir que seja um arquivo de NFe válido, verificando as tags principais
-        if (!parsedJson.nfeProc && !parsedJson.NFe) {
-            return reply.status(400).send({ error: 'XML vazio ou sem conteúdo válido' });
-        }
+        //2º Objeto TypeScript -> Validações de regras de negócio
+        const validacaoResultado = runValidations(nfeParsed);
 
-        return reply.status(200).send({ message: 'XML recebido e validado com sucesso', size: xmlContent.length });
+        //3º Formatação da resposta de validação
+        const response = formatValidationResponse(validacaoResultado);
+
+        //4º Retorna 200 OK com o resultado da validação
+        return reply.status(200).send(response);
+        
+
     } catch (error: any) {
-        request.log.error('Erro ao processar o arquivo XML:', error);
-
-        // Captura explícita do erro lançado se o arquivo exceder os 10MB (limite do multipart)
-    if (error.code === 'FST_REQ_FILE_TOO_LARGE') {
-        return reply.status(413).send({ error: 'O arquivo excede o tamanho máximo configurado de 10MB.' });
-      }
-  
-      return reply.status(500).send({ error: 'Erro interno ao processar o arquivo XML.' });
+        //HTTP 400
+        if (error instanceof XmlParsingError){
+            request.log.error ({ requestId: request.id, error: error.message }, 'Erro de parsing XML');
+            return reply.status(400).send({ formatParsingError: error.message });
+        }
+        
+        //HTTP 500
+        request.log.error({ requestId: request.id, error: error.message }, 'Erro interno na validação da NF-e');
+        return reply.status(500).send({ 
+            status: 'erro_interno',
+            mensagem: 'Ocorreu um erro interno ao processar a NF-e. Por favor, tente novamente mais tarde.'
+        });
     }
     
  }
