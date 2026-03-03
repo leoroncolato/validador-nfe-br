@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react'; // Adicionado useRef
 
 interface UploadFormProps {
   onSubmit: (data: File | string) => void;
@@ -8,17 +8,20 @@ interface UploadFormProps {
 export const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isLoading }) => {
   const [file, setFile] = useState<File | null>(null);
   const [xmlText, setXmlText] = useState('');
+  
+  // Referência para acessar o input de arquivo na DOM
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setFile(e.target.files[0]);
-      setXmlText(''); // Limpa o textarea se um arquivo for selecionado
+      setXmlText(''); 
     }
   };
 
   const handleTextChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setXmlText(e.target.value);
-    setFile(null); // Limpa a seleção do arquivo se digitar texto
+    setFile(null); 
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -28,14 +31,27 @@ export const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isLoading }) =
     } else if (xmlText.trim()) {
       onSubmit(xmlText);
     }
+
+    // Limpa o formulário logo após o envio
+    setFile(null);
+    setXmlText('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   return (
     <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
       <div>
         <label>
-          <strong>Upload de arquivo XML:</strong><br/>
-          <input type="file" accept=".xml" onChange={handleFileChange} disabled={isLoading} />
+          <strong>Upload de arquivo .xml/.txt/.json:</strong><br/>
+          <input 
+            type="file" 
+            accept=".xml" 
+            onChange={handleFileChange} 
+            disabled={isLoading} 
+            ref={fileInputRef} 
+          />
         </label>
       </div>
       
@@ -47,7 +63,7 @@ export const UploadForm: React.FC<UploadFormProps> = ({ onSubmit, isLoading }) =
             onChange={handleTextChange}
             disabled={isLoading}
             rows={10}
-            style={{ width: '100%', maxWidth: '600px' }}
+            style={{ width: '100%', maxWidth: '600px', resize: 'vertical' }}
           />
         </label>
       </div>
