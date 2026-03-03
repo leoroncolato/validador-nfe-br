@@ -5,12 +5,12 @@ import { type NFe } from '../../src/models/nf-e.js';
 describe('cnpjValidator', () => {
   it('deve retornar null para um CNPJ válido e formatado', () => {
     // CNPJ real válido gerado para testes
-    const nfeMock = { emit: { CNPJ: '73.492.362/0001-80' } } as NFe;
+    const nfeMock = { emit: { CNPJ: '35.055.268/0001-05' } } as NFe;
     expect(validateCNPJ(nfeMock)).toBeNull();
   });
 
   it('deve retornar null para um CNPJ válido contendo apenas números', () => {
-    const nfeMock = { emit: { CNPJ: '73492362000180' } } as NFe;
+    const nfeMock = { emit: { CNPJ: '61741599000109' } } as NFe;
     expect(validateCNPJ(nfeMock)).toBeNull();
   });
 
