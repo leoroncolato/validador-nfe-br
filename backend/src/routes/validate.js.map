@@ -1,0 +1,1 @@
+{"version":3,"file":"validate.js","sourceRoot":"","sources":["validate.ts"],"names":[],"mappings":"AACA,OAAO,EAAE,UAAU,EAAE,MAAM,sCAAsC,CAAC;AAElE,MAAM,CAAC,OAAO,CAAC,KAAK,UAAU,cAAc,CAAC,GAAoB;IAC7D,GAAG,CAAC,IAAI,CAAC,WAAW,EAAE,UAAU,CAAC,CAAC;AACtC,CAAC"}
