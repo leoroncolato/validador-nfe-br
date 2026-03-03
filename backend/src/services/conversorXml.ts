@@ -24,6 +24,10 @@ export const parseNFeXML = (xmlData: string | Buffer): NFe => {
     attributeNamePrefix: '@_',
     parseTagValue: true,
     parseAttributeValue: true,
+    numberParseOptions: {
+      leadingZeros: false,// se a string começa com zero, mantenha como string e não como número, evitando erros para conteudos que comecem com 0
+      hex: false
+    },
     // Força tags que podem repetir a serem sempre um array, evitando bugs de map/forEach
     isArray: (name) => {
       if (['det', 'ide'].includes(name)) return true;
