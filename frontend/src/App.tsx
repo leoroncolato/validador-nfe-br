@@ -83,7 +83,7 @@ export const App: React.FC = () => {
           <h2 style={{ marginTop: 0, borderBottom: '2px solid var(--color-4)', paddingBottom: '0.5rem' }}>Resultado</h2>
           {!result && !isLoading && !error && (
             <p style={{ opacity: 0.6, fontStyle: 'italic', textAlign: 'center', marginTop: '3rem' }}>
-              Aguardando o envio de uma nota para validação...
+              Aguardando o envio de uma NFe para validação...
             </p>
           )}
           <ResultViewer result={result} />
